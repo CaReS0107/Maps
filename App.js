@@ -1,108 +1,115 @@
-import React, {Component} from "react";
+import React, { Component } from 'react';
+import { Dimensions, StyleSheet } from 'react-native';
+import MapView from 'react-native-maps';
+import MapViewDirections from 'react-native-maps-directions';
 
-import {StyleSheet,Dimensions, View,Text,AppRegistry, ActivityIndicator, ToastAndroid} from "react-native";
- import MapView from 'react-native-maps';
- const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const ASPECT_RATIO = width / height;
+const LATITUDE = 37.771707;
+const LONGITUDE = -122.4053769;
+const LATITUDE_DELTA = 0.0922;
+const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
+const GOOGLE_MAPS_APIKEY = 'AIzaSyDVjsQiigQFkCS33L6GP0NajfneRnjIvWk';
 
-export default class App extends Component {
+class Example extends Component {
 
-  constructor(){
-
-    super ()
-      this.state = {
-        region:{
-          latitude: null,
-          longitude: null,
-          latitudeDelta: null,
-          longitudeDelta:null,
-        }
+  constructor(props) {
+    super(props);
+    this.state = {
+      region: {
+        latitude: null,
+        longitude: null,
+        latitudeDelta: null,
+        longitudeDelta: null,
       }
+    }
+
+    // AirBnB's Office, and Apple Park
+    this.state = {
+      coordinates: [
+        {
+          latitude: 37.3317876,
+          longitude: -122.0054812,
+        }],
+      region: {
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: latDelta,
+        longitudeDelta: lonDelta,
+      }
+    };
+
+    this.mapView = null;
+  }
+  componentWillMount() {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude
+        const lon = position.coords.longitude
+        const accuracy = position.coords.accuracy
+        this.calcDelta(lat, lon, accuracy)
+      },
+      (error) => { ToastAndroid.show(error.message, ToastAndroid.SHORT) },
+      { enableHighAccuracy: true, },
+    );
+
+
+  }
+  onMapPress = (e) => {
+    this.setState({
+      coordinates: [
+        ...this.state.coordinates,
+        e.nativeEvent.coordinate,
+      ],
+    });
   }
 
-    calcDelta(lat, lon, accuracy){
-        const oneDegreeOfLongitudInMeters = 111.32;
-        const circumferance = (40075 / 360)
-        const latDelta = accuracy * (1 / (Math.cos(lat) * circumferance))
-        const lonDelta = (accuracy / oneDegreeOfLongitudInMeters)
-
-        this.setState({
-          region: {
-            latitude: lat,
-            longitude: lon,
-            latitudeDelta: latDelta,
-            longitudeDelta:lonDelta,
-          }
-        },()=>console.log(this.state.region))
-    }
-    componentWillMount (){
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-              const lat = position.coords.latitude
-              const lon = position.coords.longitude
-              const accuracy  = position.coords.accuracy
-              this.calcDelta(lat, lon, accuracy)
-        },
-        (error) => {ToastAndroid.show(error.message, ToastAndroid.SHORT)},
-        { enableHighAccuracy: true,  },
-      );
-
-      // navigator.geolocation.getCurentPosition(
-      //   (position) => {
-      //   },
-      //   (error) => {console.log(error)},
-      //   { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
-      // );
-    }
-    marker () {
-      return {
-        latitude: this.state.region.latitude,
-        longitude: this.state.region.longitude
-
-      }
-    }
-    render() {
-        console.log(this.state.region.latitude);
-      if (this.state.region.latitude == null) {
-
-        return    <View style={styles.container}>
-                   <ActivityIndicator size="large" color="#0000ff" />
-                  </View>
-      }
-
-      return(
-        <View style={styles.container}>
-
-
-       <MapView
-        style={styles.map}
-        initialRegion = {this.state.region}
-        >
-          <MapView.Marker
-          coordinate={this.marker()}
-          title = "sunt aici"
-          description =  "Home"
+  render() {
+    return (
+      <MapView
+        initialRegion={{
+          latitude: LATITUDE,
+          longitude: LONGITUDE,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA,
+        }}
+        style={StyleSheet.absoluteFill}
+        ref={c => this.mapView = c}
+        onPress={this.onMapPress}
+      >
+        {this.state.coordinates.map((coordinate, index) =>
+          <MapView.Marker key={`coordinate_${index}`} coordinate={coordinate} />
+        )}
+        {(this.state.coordinates.length >= 2) && (
+          <MapViewDirections
+            origin={this.state.coordinates[0]}
+            waypoints={(this.state.coordinates.length > 2) ? this.state.coordinates.slice(1, -1) : null}
+            destination={this.state.coordinates[this.state.coordinates.length - 1]}
+            apikey={GOOGLE_MAPS_APIKEY}
+            strokeWidth={3}
+            strokeColor="hotpink"
+            onStart={(params) => {
+              console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
+            }}
+            onReady={(result) => {
+              this.mapView.fitToCoordinates(result.coordinates, {
+                edgePadding: {
+                  right: (width / 20),
+                  bottom: (height / 20),
+                  left: (width / 20),
+                  top: (height / 20),
+                }
+              });
+            }}
+            onError={(errorMessage) => {
+              // console.log('GOT AN ERROR');
+            }}
           />
-
-
-        </MapView>
-        </View>
-      );
-    }
-
+        )}
+      </MapView>
+    );
+  }
 }
 
-const styles = StyleSheet.create({
-container:{
- flex: 1,
- justifyContent: 'center',
- alignItems: 'center',
- backgroundColor:'#2980b9'
-},
-map:{
- flex:1,
- width:width,
-
-}
-
-});
+export default Example;
