@@ -16,14 +16,6 @@ class Example extends Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      region: {
-        latitude: null,
-        longitude: null,
-        latitudeDelta: null,
-        longitudeDelta: null,
-      }
-    }
 
     // AirBnB's Office, and Apple Park
     this.state = {
@@ -31,31 +23,17 @@ class Example extends Component {
         {
           latitude: 37.3317876,
           longitude: -122.0054812,
-        }],
-      region: {
-        latitude: lat,
-        longitude: lon,
-        latitudeDelta: latDelta,
-        longitudeDelta: lonDelta,
-      }
+        },
+        {
+          latitude: 37.771707,
+          longitude: -122.4053769,
+        },
+      ],
     };
 
     this.mapView = null;
   }
-  componentWillMount() {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude
-        const lon = position.coords.longitude
-        const accuracy = position.coords.accuracy
-        this.calcDelta(lat, lon, accuracy)
-      },
-      (error) => { ToastAndroid.show(error.message, ToastAndroid.SHORT) },
-      { enableHighAccuracy: true, },
-    );
 
-
-  }
   onMapPress = (e) => {
     this.setState({
       coordinates: [
